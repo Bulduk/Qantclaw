@@ -10,6 +10,7 @@ import {
   Bot, Target, Users, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { processSentimentAndTrade } from './lib/bridge';
 
 interface Trade {
   id: number;
@@ -50,6 +51,11 @@ export default function App() {
   const [alert, setAlert] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<'Dashboard' | 'Strategies' | 'Artifacts' | 'Logs' | 'Admin'>('Dashboard');
   const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(null);
+
+  // Bridge Engine Data
+  const [bridgeRunning, setBridgeRunning] = useState(false);
+  const [bridgeResult, setBridgeResult] = useState<any>(null);
+  const [marketInput, setMarketInput] = useState("Bitcoin shows sudden surge in volume as institutional buyers step in. Retail sentiment remains cautious but whales are accumulating.");
 
   // Fetch metrics & trades
   useEffect(() => {
@@ -109,6 +115,26 @@ export default function App() {
       }
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const runBridgeAnalysis = async () => {
+    if (!marketInput.trim() || bridgeRunning) return;
+    setBridgeRunning(true);
+    setBridgeResult(null);
+    try {
+      const data = await processSentimentAndTrade(marketInput);
+      if (data.success) {
+        setBridgeResult(data);
+      } else {
+        setAlert(data.error || 'Bridge analysis failed');
+        setTimeout(() => setAlert(null), 5000);
+      }
+    } catch (e) {
+      setAlert('Failed to connect to bridge API');
+      setTimeout(() => setAlert(null), 5000);
+    } finally {
+      setBridgeRunning(false);
     }
   };
 
@@ -245,6 +271,145 @@ export default function App() {
                   progress={metrics.signalStrength * 100}
                   icon={<Zap size={16} className="text-lime-600/70 dark:text-lime-400/70" />}
                 />
+              </div>
+
+              {/* Quantum Sentiment Bridge Visualizer */}
+              <div className="mb-8 bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.04)] dark:shadow-xl dark:shadow-black/50 overflow-hidden relative">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 via-rose-500 to-orange-500"></div>
+                <div className="p-6 border-b border-slate-100 dark:border-white/5">
+                   <div className="flex justify-between items-start mb-4">
+                     <div>
+                       <h3 className="text-xl font-medium tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                         <Hexagon className="text-orange-500 w-5 h-5" /> 
+                         AUREON Live Synthesizer
+                       </h3>
+                       <p className="text-xs font-mono text-slate-500 dark:text-slate-400 mt-1">
+                         Auris Node (NLP) ↔ Master Equation (Quantum 9-Dim)
+                       </p>
+                     </div>
+                   </div>
+                   
+                   <div className="flex gap-3">
+                     <input 
+                       type="text" 
+                       value={marketInput}
+                       onChange={(e) => setMarketInput(e.target.value)}
+                       placeholder="Enter live market text..."
+                       className="flex-1 bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-slate-700 dark:text-slate-200 font-mono focus:outline-none focus:border-orange-500/50 transition-colors"
+                     />
+                     <button 
+                       onClick={runBridgeAnalysis}
+                       disabled={bridgeRunning}
+                       className="px-6 py-3 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-xl shadow-[0_0_15px_rgba(249,115,22,0.3)] hover:shadow-[0_0_25px_rgba(249,115,22,0.5)] transition-all flex items-center gap-2"
+                     >
+                       {bridgeRunning ? (
+                         <>
+                           <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
+                           Synthesizing...
+                         </>
+                       ) : (
+                         <>
+                           <Bot size={16} /> Ignite Bridge
+                         </>
+                       )}
+                     </button>
+                   </div>
+                </div>
+                
+                <div className="p-6 bg-slate-50 dark:bg-[#050505] min-h-[220px] flex items-center justify-center relative overflow-hidden">
+                  {!bridgeResult && !bridgeRunning && (
+                     <div className="text-slate-400 dark:text-slate-600 font-mono text-sm flex flex-col items-center gap-3 animate-pulse">
+                       <Network size={32} className="opacity-50" />
+                       Awaiting Input Stream...
+                     </div>
+                  )}
+
+                  {bridgeRunning && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="relative w-48 h-48 flex items-center justify-center">
+                         <div className="absolute inset-0 border border-orange-500/30 rounded-full animate-[ping_2s_ease-out_infinite]"></div>
+                         <div className="absolute inset-4 border border-rose-500/30 rounded-full animate-[ping_2s_ease-out_infinite_0.5s]"></div>
+                         <Hexagon size={48} className="text-orange-500 animate-[spin_4s_linear_infinite]" />
+                      </div>
+                    </div>
+                  )}
+
+                  {bridgeResult && !bridgeRunning && (
+                    <div className="w-full flex justify-between items-center relative animate-in fade-in zoom-in-95 duration-500">
+                      {/* Left: Auris Node Sentiment */}
+                      <div className="flex-1 flex flex-col items-center gap-2">
+                        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg transform transition-transform ${
+                           bridgeResult.sentimentScore > 0 ? 'bg-green-100 text-green-600 shadow-green-500/20' : 
+                           bridgeResult.sentimentScore < 0 ? 'bg-red-100 text-red-600 shadow-red-500/20' : 
+                           'bg-slate-200 text-slate-600 shadow-slate-500/20'
+                        }`}>
+                          <Bot size={32} />
+                        </div>
+                        <span className="text-[10px] uppercase font-mono font-bold text-slate-500">Auris Node Output</span>
+                        <span className={`text-2xl font-mono ${
+                           bridgeResult.sentimentScore > 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
+                        }`}>
+                          {bridgeResult.sentimentScore > 0 ? '+' : ''}{bridgeResult.sentimentScore.toFixed(3)}
+                        </span>
+                      </div>
+
+                      {/* Center: The 9 Dimensions (Agents) */}
+                      <div className="flex-1 flex justify-center relative">
+                        {/* Connecting Line from Auris */}
+                        <div className="absolute left-[-50%] top-1/2 w-1/2 h-0.5 bg-gradient-to-r from-orange-500/0 to-orange-500/50"></div>
+                        {/* Connecting Line to Lighthouse */}
+                        <div className="absolute right-[-50%] top-1/2 w-1/2 h-0.5 bg-gradient-to-l from-orange-500/0 to-orange-500/50"></div>
+                        
+                        <div className="grid grid-cols-3 gap-3 relative z-10 w-fit">
+                           {bridgeResult.rawSignals.map((sig: any, idx: number) => (
+                             <motion.div 
+                               initial={{ scale: 0, opacity: 0 }}
+                               animate={{ scale: 1, opacity: 1 }}
+                               transition={{ delay: idx * 0.05 + 0.2, type: "spring" }}
+                               key={sig.id} 
+                               className={`w-10 h-10 rounded-full flex items-center justify-center text-[9px] font-bold shadow-inner ${
+                                 sig.value > 0 ? 'bg-green-500 dark:bg-green-500/20 text-white dark:text-green-400 border border-green-400' : 
+                                 sig.value < 0 ? 'bg-red-500 dark:bg-red-500/20 text-white dark:text-red-400 border border-red-400' : 
+                                 'bg-slate-300 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-400'
+                               }`}
+                               title={`Agent: ${sig.id}\nWeight: ${sig.weight}\nValue: ${sig.value.toFixed(2)}`}
+                             >
+                               {sig.value > 0 ? 'BUY' : sig.value < 0 ? 'SELL' : 'HLD'}
+                             </motion.div>
+                           ))}
+                        </div>
+                      </div>
+
+                      {/* Right: Lighthouse Consensus */}
+                      <div className="flex-1 flex flex-col items-center gap-2">
+                        <motion.div 
+                           initial={{ rotateY: 90 }}
+                           animate={{ rotateY: 0 }}
+                           transition={{ delay: 0.8, type: "spring", damping: 12 }}
+                           className={`p-1 rounded-2xl ${
+                             bridgeResult.decision.passed ? 
+                               (bridgeResult.decision.action === 'BUY' ? 'bg-gradient-to-br from-green-400 to-green-600 p-[2px]' : 'bg-gradient-to-br from-red-400 to-red-600 p-[2px]') : 
+                               'bg-slate-300 dark:bg-slate-700 p-[2px]'
+                           }`}
+                        >
+                          <div className="w-24 h-24 bg-white dark:bg-black rounded-xl flex flex-col items-center justify-center gap-1">
+                             <Target size={24} className={bridgeResult.decision.action === 'BUY' ? 'text-green-500' : bridgeResult.decision.action === 'SELL' ? 'text-red-500' : 'text-slate-500'} />
+                             <span className={`text-xl font-black tracking-tighter ${bridgeResult.decision.action === 'BUY' ? 'text-green-500' : bridgeResult.decision.action === 'SELL' ? 'text-red-500' : 'text-slate-500'}`}>
+                               {bridgeResult.decision.action}
+                             </span>
+                          </div>
+                        </motion.div>
+                        <span className="text-[10px] uppercase font-mono font-bold text-slate-500">Lighthouse Output</span>
+                        
+                        <div className="flex gap-2">
+                          <span className="text-xs font-mono text-slate-700 dark:text-slate-300">Γ: {bridgeResult.decision.coherence}%</span>
+                          <span className="text-xs font-mono text-slate-700 dark:text-slate-300">Vote: {bridgeResult.decision.positiveVotes}/9</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                </div>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

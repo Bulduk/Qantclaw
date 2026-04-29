@@ -1,6 +1,6 @@
 {
-  "name": "",
-  "description": "",
+  "name": "Aureon Hybrid Quantum Trading System",
+  "description": "An ultra-low latency trading dashboard built with a quantum-inspired engine, a 9-dimensional field state UI, and an AI sentiment bridge. Features live simulated paper trading, real-time metrics, an interactive 6/9 voting consensus protocol (Lighthouse), and dynamic visual data flowing from NLP sensors into the core equation.",
   "requestFramePermissions": [],
   "majorCapabilities": []
 }
