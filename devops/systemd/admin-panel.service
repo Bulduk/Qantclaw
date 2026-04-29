@@ -1,0 +1,18 @@
+[Unit]
+Description=AUREON Admin Panel (Flutter/React Monorepo)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/quantum-trading-system/admin-panel
+ExecStart=/usr/bin/npm run start
+Restart=on-failure
+RestartSec=5
+Environment=NODE_ENV=production
+Environment=PORT=3000
+StandardOutput=append:/var/log/admin-panel/out.log
+StandardError=append:/var/log/admin-panel/error.log
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,17 @@
+[Unit]
+Description=CloddsBot - NLP Interface and Market Scanner
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/quantum-trading-system/clodds-interface
+ExecStart=/usr/bin/npm run start
+Restart=on-failure
+RestartSec=5
+Environment=NODE_ENV=production
+StandardOutput=append:/var/log/cloddsbot/out.log
+StandardError=append:/var/log/cloddsbot/error.log
+
+[Install]
+WantedBy=multi-user.target
